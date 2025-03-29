@@ -1,18 +1,19 @@
 modLoader = "javafml"
 loaderVersion = "*"
-license = "CC0-1.0"
+license = "MIT"
 
 [[mods]]
-modId = "${id}"
-version = "${version}"
-displayName = "${name}"
-authors = "Me"
+modId = "${mod_id}"
+version = "${mod_version}"
+displayName = "Template"
+authors = "Me!"
 description = "This is an example description! Tell everyone what your mod is about!"
-logoFile = "assets/${id}/icon.png"
+logoFile = "assets/${mod_id}/icon.png"
 logoBlur = false
 
-[[mixins]]
-config = "template-common.mixins.json"
-
-[[mixins]]
-config = "template-forge.mixins.json"
+[[dependencies."${mod_id}"]]
+modId = "forge"
+mandatory = true
+versionRange = "[${forge_version},)"
+ordering = "NONE"
+side = "BOTH"

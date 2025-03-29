@@ -78,9 +78,7 @@ dependencies {
 	minecraft("com.mojang:minecraft:$minecraft")
 	mappings(loom.layered {
 		officialMojangMappings()
-		parchment(
-			"org.parchmentmc.data:parchment-${common.mod.version("parchment_minecraft_version")}:${common.mod.version("parchment_mappings_version")}@zip"
-		)
+		parchment("org.parchmentmc.data:parchment-${common.mod.version("parchment_minecraft_version")}:${common.mod.version("parchment_mappings_version")}@zip")
 	})
 	modImplementation("net.fabricmc:fabric-loader:${common.mod.version("fabric_loader")}")
 
@@ -126,4 +124,12 @@ java {
 tasks.build {
 	group = "versioned"
 	description = "Must run through 'chiseledBuild'"
+}
+
+tasks.register<Copy>("buildAndCollect") {
+	group = "versioned"
+	description = "Must run through 'chiseledBuild'"
+	from(tasks.remapJar.get().archiveFile, tasks.remapSourcesJar.get().archiveFile)
+	into(rootProject.layout.buildDirectory.file("libs/${mod.version}/$loader"))
+	dependsOn("build")
 }

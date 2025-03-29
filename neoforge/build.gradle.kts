@@ -9,26 +9,59 @@ plugins {
 val loader = prop("loom.platform")!!
 val minecraft: String = stonecutter.current.version
 val common: Project = requireNotNull(stonecutter.node.sibling("")) {
-    "No common project for $project"
-}
+	"No common project for $project"
+}.project
 
 version = "${mod.version}+$minecraft"
 base {
-    archivesName.set("${mod.id}-$loader")
+	archivesName.set("${mod.id}-$loader")
 }
+
 architectury {
     platformSetupLoomIde()
     neoForge()
 }
 
+loom {
+	silentMojangMappingsLicense()
+
+	decompilers {
+		get("vineflower").apply { // Adds names to lambdas - useful for mixins
+			options.put("mark-corresponding-synthetics", "1")
+		}
+	}
+
+	runs {
+		val runDir = "../../../.runs"
+
+		named("client") {
+			client()
+			configName = "Client"
+			runDir("$runDir/client")
+			source(sourceSets["main"])
+			programArgs("--username=Dev")
+		}
+		named("server") {
+			server()
+			configName = "Server"
+			runDir("$runDir/server")
+			source(sourceSets["main"])
+		}
+	}
+
+	runConfigs.all {
+		isIdeConfigGenerated = true
+	}
+}
+
 val commonBundle: Configuration by configurations.creating {
-    isCanBeConsumed = false
-    isCanBeResolved = true
+	isCanBeConsumed = false
+	isCanBeResolved = true
 }
 
 val shadowBundle: Configuration by configurations.creating {
-    isCanBeConsumed = false
-    isCanBeResolved = true
+	isCanBeConsumed = false
+	isCanBeResolved = true
 }
 
 configurations {
@@ -38,73 +71,55 @@ configurations {
 }
 
 repositories {
-    maven("https://maven.neoforged.net/releases/")
+	maven("https://maven.parchmentmc.org/")
+	maven("https://maven.neoforged.net/releases/")
 }
 
 dependencies {
-    minecraft("com.mojang:minecraft:$minecraft")
-    mappings(loom.layered {
-        mappings("net.fabricmc:yarn:$minecraft+build.${common.mod.dep("yarn_build")}:v2")
-        common.mod.dep("neoforge_patch").takeUnless { it.startsWith('[') }?.let {
-            mappings("dev.architectury:yarn-mappings-patch-neoforge:$it")
-        }
-    })
-    "neoForge"("net.neoforged:neoforge:${common.mod.dep("neoforge_loader")}")
-    "io.github.llamalad7:mixinextras-neoforge:${mod.dep("mixin_extras")}".let {
-        implementation(it)
-        include(it)
-    }
+	minecraft("com.mojang:minecraft:$minecraft")
+	mappings(loom.layered {
+		officialMojangMappings()
+		parchment("org.parchmentmc.data:parchment-${common.mod.version("parchment_minecraft_version")}:${common.mod.version("parchment_mappings_version")}@zip")
+	})
+    neoForge("net.neoforged:neoforge:${common.mod.version("neoforge_loader")}")
 
     commonBundle(project(common.path, "namedElements")) { isTransitive = false }
     shadowBundle(project(common.path, "transformProductionNeoForge")) { isTransitive = false }
 }
 
-loom {
-    decompilers {
-        get("vineflower").apply { // Adds names to lambdas - useful for mixins
-            options.put("mark-corresponding-synthetics", "1")
-        }
-    }
+tasks.processResources {
+	properties(
+		listOf("META-INF/neoforge.mods.toml"),
 
-    runConfigs.all {
-        isIdeConfigGenerated = true
-        runDir = "../../../run"
-        vmArgs("-Dmixin.debug.export=true")
-    }
-}
-
-java {
-    withSourcesJar()
-    val java = if (stonecutter.eval(minecraft, ">=1.20.5"))
-        JavaVersion.VERSION_21 else JavaVersion.VERSION_17
-    targetCompatibility = java
-    sourceCompatibility = java
-}
-
-tasks.jar {
-    archiveClassifier = "dev"
-}
-
-tasks.remapJar {
-    injectAccessWidener = true
-    input = tasks.shadowJar.get().archiveFile
-    archiveClassifier = null
-    dependsOn(tasks.shadowJar)
+		"mod_id" to mod.id,
+		"mod_version" to mod.version,
+		"minecraft_version" to minecraft,
+		"neoforge_version" to mod.version("neoforge_loader"),
+	)
 }
 
 tasks.shadowJar {
-    configurations = listOf(shadowBundle)
-    archiveClassifier = "dev-shadow"
-    exclude("fabric.mod.json", "architectury.common.json")
+	configurations = listOf(shadowBundle)
+	archiveClassifier = "dev-shadow"
 }
 
-tasks.processResources {
-    properties(listOf("META-INF/neoforge.mods.toml", "pack.mcmeta"),
-        "id" to mod.id,
-        "name" to mod.name,
-        "version" to mod.version,
-        "minecraft" to common.mod.prop("mc_dep_forgelike")
-    )
+tasks.remapJar {
+	injectAccessWidener = true
+	input = tasks.shadowJar.get().archiveFile
+	archiveClassifier = null
+	dependsOn(tasks.shadowJar)
+}
+
+tasks.jar {
+	archiveClassifier = "dev"
+}
+
+java {
+	withSourcesJar()
+	val java = if (stonecutter.eval(minecraft, ">=1.20.5"))
+		JavaVersion.VERSION_21 else JavaVersion.VERSION_17
+	targetCompatibility = java
+	sourceCompatibility = java
 }
 
 tasks.build {
