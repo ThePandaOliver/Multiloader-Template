@@ -1,26 +1,51 @@
-# What is this?
-This is a template for minecraft modding projects, 
-it uses [Architectury Loom](https://docs.architectury.dev/loom/introduction) for easy multi-loader management, 
-[Stonecutter](https://stonecutter.kikugie.dev/) for multi-version management,
-and [Forgix](https://github.com/PacifistMC/Forgix) for merging jars into one jar.\
-This template was made with Fabric, Forge and NeoForge support in mind
+# Minecraft Modding Template
 
-## [Architectury Loom](https://docs.architectury.dev/loom/introduction)
-Architectury Loom is a replacement for [ForgeGradle](https://docs.minecraftforge.net/en/fg-6.x/) and
-[NeoGradle](https://docs.neoforged.net/neogradle/docs/) and a fork of [Fabric Loom](https://docs.fabricmc.net/develop/loom/).\
+This template helps you create Minecraft mods that work with Fabric, Forge, and NeoForge. It includes:
+- **[Architectury Loom](https://docs.architectury.dev/loom/introduction)** – Manages multiple mod loaders easily.
+- **[Stonecutter](https://stonecutter.kikugie.dev/)** – Handles multiple Minecraft versions in one project.
+- **[Forgix](https://github.com/PacifistMC/Forgix)** – Combines different loader versions into a single jar.
 
-[Fabric Loom](https://docs.fabricmc.net/develop/loom/) has a lot of useful, features making mod development much easier, 
-the only downside is that it was made only for the Fabric loader. But luckily the Architectury team has made a version that can be 
-used for mod development for Forge and NeoForge, making multiloader development much easier.
+## Tools Overview
 
-## [Stonecutter](https://stonecutter.kikugie.dev/)
-Stonecutter is gradle plugin for easy multi-version management, it adds pre-processing functionality to java made 
-specifically for version management, allowing you to write all code for all versions in one instance of your project.\
-Read [this guide](https://stonecutter.kikugie.dev/stonecutter/guide/comments) to learn how to use Stonecutter's pre-processing.
+### **[Architectury Loom](https://docs.architectury.dev/loom/introduction)**
+A Gradle tool that simplifies multi-loader mod development. It extends **Fabric Loom**, allowing you to develop mods for **Fabric, Forge, and NeoForge** in one project.
 
-## [Forgix](https://github.com/PacifistMC/Forgix)
-Forgix is a gradle plugin that allows you to merge jars together, creating one jar that works on all supported loaders.\
-Note: this does not merge different versions, it only merges the different loader versions.
+### **[Stonecutter](https://stonecutter.kikugie.dev/)**
+A Gradle plugin for managing multiple Minecraft versions. It lets you write code for different versions in one project. Learn more [here](https://stonecutter.kikugie.dev/stonecutter/guide/comments).
 
-# How do i set up my project?
-Comming soon
+### **[Forgix](https://github.com/PacifistMC/Forgix)**
+A Gradle plugin that merges different loader versions into a single jar. **Note:** It doesn’t merge different Minecraft versions, only different loaders.
+
+---
+
+# Setting Up Your Project
+
+It's assumed that you know the basics of minecraft modding and java programming.
+
+### 1. **Edit `gradle.properties`**
+Update the following values:
+- **`mod.version`** – Your mod's version.
+- **`mod.group`** – Your mod's unique identifier (its common practice to use your own domain, e.g., `com.example` if you own the domain `example.com`). If not, use `me.<yourname>`.
+- **`mod.id`** – Your mod's ID.
+- **`mod.name`** – Display name of your mod (spaces allowed).
+- **`mod.description`** – A short description (spaces allowed).
+- **`mod.license`** – License abbreviation (e.g., `MIT`).
+
+### 2. **Update Package Names**
+- Inside `src/main/java` for the root, Fabric, Forge, and NeoForge projects:
+	- Rename `com.example` to your mod's group (`mod.group`).
+	- Rename `template` to your `mod.id`.
+
+### 3. **Rename Resources**
+Inside the `src/main/resources` for the root, Fabric, Forge, and NeoForge projects, update:
+- **Files:** 
+  - Rename the `template` part of `template-*.mixin.json` files to match your `mod.id`.
+  - Rename the `template` part of `template.accesswidener` files to match your `mod.id`.
+- **`architectury.common.json` file:** Update the `accessWidener` value to match your new `.accesswidener` filename.
+- **Assets folder:** Rename `template` to your `mod.id`.
+
+### 4. **Final Changes**
+- **Update `TemplateModCommon` class** – Set your mod ID.
+- **Edit `settings.gradle.kts`** – Set `rootProject.name` to your project’s name.
+
+That’s it! Your modding project is now set up and ready to go. 🚀

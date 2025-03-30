@@ -5,7 +5,7 @@ plugins {
 	id("com.github.johnrengelman.shadow") version "8.1.1" apply false
 	id("io.github.pacifistmc.forgix") version "1.2.9" apply false
 }
-stonecutter active "1.21.4"
+stonecutter active "1.21.4" /* [SC] DO NOT EDIT */
 
 // Builds every version into `build/libs/{mod.version}/{loader}`
 stonecutter registerChiseled tasks.register("chiseledBuild", stonecutter.chiseled) {

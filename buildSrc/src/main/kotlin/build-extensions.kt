@@ -45,6 +45,13 @@ fun Project.versionPropOrNull(key: String): String? {
 	}
 }
 
+/**
+ * Applies a set of properties to a `ProcessResources` task, based on the project's configuration
+ * and additional resource files.
+ *
+ * @param project the Gradle project that contains the configuration and properties.
+ * @param files an iterable collection of file paths to which the properties will be applied.
+ */
 fun ProcessResources.applyProperties(project: Project, files: Iterable<String>) {
 	val props = mutableMapOf(
 		"mod_version" to project.prop("mod.version"),
