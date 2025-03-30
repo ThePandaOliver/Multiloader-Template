@@ -2,14 +2,14 @@
   "schemaVersion": 1,
   "id": "${mod_id}",
   "version": "${mod_version}",
-  "name": "Template",
-  "description": "This is an example description! Tell everyone what your mod is about!",
+  "name": "${mod_name}",
+  "description": "${mod_description}",
   "authors": [
     "Me!"
   ],
   "contact": {
   },
-  "license": "MIT",
+  "license": "${mod_license}",
   "icon": "assets/${mod_id}/icon.png",
   "environment": "*",
   "entrypoints": {
@@ -18,11 +18,11 @@
     ]
   },
   "mixins": [
-    "template-common.mixins.json",
-    "template-fabric.mixins.json"
+    "${mod_id}-common.mixins.json",
+    "${mod_id}-fabric.mixins.json"
   ],
   "depends": {
-    "fabricloader": ">=${fabric_version}",
-    "minecraft": "${minecraft_version}"
+    "fabricloader": ">=${fabric_loader_version}",
+    "minecraft": ">=${minecraft_version}"
   }
 }

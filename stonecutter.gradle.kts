@@ -16,7 +16,7 @@ stonecutter registerChiseled tasks.register("chiseledBuild", stonecutter.chisele
 // Builds loader-specific versions into `build/libs/{mod.version}/{loader}`
 for (it in stonecutter.tree.branches) {
 	if (it.id.isEmpty()) continue
-	val loader = it.id.upperCaseFirst()
+	val loader = it.id.replaceFirstChar { it.uppercaseChar() }
 	stonecutter registerChiseled tasks.register("chiseledBuild$loader", stonecutter.chiseled) {
 		group = "project"
 		versions { branch, _ -> branch == it.id }
@@ -28,7 +28,7 @@ for (it in stonecutter.tree.branches) {
 for (it in stonecutter.tree.nodes) {
 	if (it.metadata != stonecutter.current || it.branch.id.isEmpty()) continue
 	val types = listOf("Client", "Server")
-	val loader = it.branch.id.upperCaseFirst()
+	val loader = it.branch.id.replaceFirstChar { it.uppercaseChar() }
 	for (type in types) it.project.tasks.register("runActive$type$loader") {
 		group = "project"
 		dependsOn("run$type")

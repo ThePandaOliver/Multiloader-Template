@@ -1,5 +1,5 @@
 # What is this?
-This is a template for a minecraft modding project, 
+This is a template for minecraft modding projects, 
 it uses [Architectury Loom](https://docs.architectury.dev/loom/introduction) for easy multi-loader management, 
 [Stonecutter](https://stonecutter.kikugie.dev/) for multi-version management,
 and [Forgix](https://github.com/PacifistMC/Forgix) for merging jars into one jar.\
@@ -15,7 +15,7 @@ used for mod development for Forge and NeoForge, making multiloader development 
 
 ## [Stonecutter](https://stonecutter.kikugie.dev/)
 Stonecutter is gradle plugin for easy multi-version management, it adds pre-processing functionality to java made 
-specifically for version management.\
+specifically for version management, allowing you to write all code for all versions in one instance of your project.\
 Read [this guide](https://stonecutter.kikugie.dev/stonecutter/guide/comments) to learn how to use Stonecutter's pre-processing.
 
 ## [Forgix](https://github.com/PacifistMC/Forgix)

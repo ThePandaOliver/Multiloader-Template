@@ -1,6 +1,6 @@
 {
   "required": true,
-  "package": "com.example.template.fabric.mixin",
+  "package": "${mod_group}.${mod_id}.fabric.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
   ],

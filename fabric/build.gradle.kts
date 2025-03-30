@@ -12,9 +12,9 @@ val common: Project = requireNotNull(stonecutter.node.sibling("")) {
 	"No common project for $project"
 }.project
 
-version = "${mod.version}+$minecraft"
+version = "${prop("mod.version")}+$minecraft"
 base {
-	archivesName.set("${mod.id}-$loader")
+	archivesName.set("${prop("mod.id")}-$loader")
 }
 
 architectury {
@@ -78,23 +78,16 @@ dependencies {
 	minecraft("com.mojang:minecraft:$minecraft")
 	mappings(loom.layered {
 		officialMojangMappings()
-		parchment("org.parchmentmc.data:parchment-${common.mod.version("parchment_minecraft_version")}:${common.mod.version("parchment_mappings_version")}@zip")
+		parchment("org.parchmentmc.data:parchment-${versionProp("parchment_minecraft_version")}:${versionProp("parchment_mappings_version")}@zip")
 	})
-	modImplementation("net.fabricmc:fabric-loader:${common.mod.version("fabric_loader")}")
+	modImplementation("net.fabricmc:fabric-loader:${versionProp("fabric_loader")}")
 
 	commonBundle(project(common.path, "namedElements")) { isTransitive = false }
 	shadowBundle(project(common.path, "transformProductionFabric")) { isTransitive = false }
 }
 
 tasks.processResources {
-	properties(
-		listOf("fabric.mod.json"),
-
-		"mod_id" to mod.id,
-		"mod_version" to mod.version,
-		"minecraft_version" to minecraft,
-		"fabric_version" to mod.version("fabric_loader"),
-	)
+	applyProperties(project, listOf("fabric.mod.json", "${prop("mod.id")}-fabric.mixin.json"))
 }
 
 tasks.shadowJar {
@@ -130,6 +123,6 @@ tasks.register<Copy>("buildAndCollect") {
 	group = "versioned"
 	description = "Must run through 'chiseledBuild'"
 	from(tasks.remapJar.get().archiveFile, tasks.remapSourcesJar.get().archiveFile)
-	into(rootProject.layout.buildDirectory.file("libs/${mod.version}/$loader"))
+	into(rootProject.layout.buildDirectory.file("libs/${prop("mod.version")}/$loader"))
 	dependsOn("build")
 }
