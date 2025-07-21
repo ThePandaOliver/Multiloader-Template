@@ -1,0 +1,7 @@
+[versions]
+manifold = "2025.1.25"
+
+[plugins]
+
+[libraries]
+preprocessor = { group = "systems.manifold", name = "manifold-preprocessor", version.ref = "manifold" }

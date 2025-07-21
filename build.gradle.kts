@@ -1,87 +1,146 @@
 @file:Suppress("UnstableApiUsage")
 
 plugins {
-	id("dev.architectury.loom")
-	id("architectury-plugin")
-	id("io.github.pacifistmc.forgix")
+	java
+	idea
+
+	id("dev.architectury.loom") version "1.10-SNAPSHOT"
+	id("architectury-plugin") version "3.4-SNAPSHOT"
+	id("io.github.pacifistmc.forgix") version "2.0.0-SNAPSHOT.5.1"
 }
 
-val minecraft = stonecutter.current.version
-
-version = "${prop("mod.version")}+$minecraft"
-base {
-	archivesName.set("${prop("mod.id")}-common")
+allprojects {
+	rootProject.gradle.extra.properties.forEach { (key, value) ->
+		project.ext.set(key, value)
+	}
 }
 
-forgix {
-	val version = "${prop("mod.version")}+${minecraft}"
-	group = "${prop("mod.group")}.${prop("mod.id")}"
-	mergedJarName = "${prop("mod.id")}-${version}.jar"
-	outputDir = "build/libs/merged"
+val mcVersion: String by extra
+val buildFor: String by extra
 
-	if (findProject(":fabric") != null) {
-		fabricContainer = FabricContainer().apply {
-			jarLocation = "versions/${minecraft}/build/libs/${prop("mod.id")}-fabric-${version}.jar"
-		}
-	}
+val modVersion: String by extra
+val modGroup: String by extra
+val modId: String by extra
 
-	if (findProject(":forge") != null) {
-		forgeContainer = ForgeContainer().apply {
-			jarLocation = "versions/${minecraft}/build/libs/${prop("mod.id")}-forge-${version}.jar"
-		}
-	}
+val modName: String by extra
+val modDescription: String by extra
+val modAuthors: String by extra
+val modLicense: String by extra
 
-	if (findProject(":neoforge") != null) {
-		neoForgeContainer = NeoForgeContainer().apply {
-			jarLocation = "versions/${minecraft}/build/libs/${prop("mod.id")}-neoforge-${version}.jar"
-		}
-	}
+val parchmentMinecraftVersion: String by extra
+val parchmentMappingVersion: String by extra
 
-	removeDuplicate("${prop("mod.group")}.${prop("mod.id")}")
+architectury {
+	common(buildFor.split(","))
 }
-
-architectury.common(stonecutter.tree.branches.mapNotNull {
-	if (stonecutter.current.project !in it) null
-	else it.project.prop("loom.platform")
-})
 
 loom {
-	silentMojangMappingsLicense()
-	accessWidenerPath = rootProject.file("src/main/resources/${prop("mod.id")}.accesswidener")
+	runConfigs.configureEach { isIdeConfigGenerated = false }
+}
 
-	decompilers {
-		get("vineflower").apply { // Adds names to lambdas - useful for mixins
-			options.put("mark-corresponding-synthetics", "1")
+allprojects {
+	apply(plugin = "java")
+	apply(plugin = "dev.architectury.loom")
+	apply(plugin = "architectury-plugin")
+
+	version = "$modVersion+$mcVersion"
+	group = modGroup
+
+	loom {
+		silentMojangMappingsLicense()
+		accessWidenerPath = rootProject.file("src/main/resources/$modId.accesswidener")
+
+		decompilers {
+			get("vineflower").apply { // Adds names to lambdas - useful for mixins
+				options.put("mark-corresponding-synthetics", "1")
+			}
 		}
+	}
+
+	repositories {
+		maven("https://maven.parchmentmc.org/")
+	}
+
+	dependencies {
+		minecraft("com.mojang:minecraft:$mcVersion")
+		mappings(loom.layered {
+			officialMojangMappings()
+			parchment("org.parchmentmc.data:parchment-$parchmentMinecraftVersion:$parchmentMappingVersion@zip")
+		})
+
+		annotationProcessor(rootProject.libs.preprocessor)
+	}
+
+	java {
+		withSourcesJar()
+		val java = JavaVersion.VERSION_21
+		targetCompatibility = java
+		sourceCompatibility = java
+	}
+
+	tasks.withType(JavaCompile::class).configureEach {
+		options.compilerArgs.add("-Xplugin:Manifold")
 	}
 }
 
-repositories {
-	maven("https://maven.parchmentmc.org/")
-}
+subprojects {
+	val commonBundle: Configuration by configurations.creating {
+		isCanBeConsumed = false
+		isCanBeResolved = true
+	}
 
-dependencies {
-	minecraft("com.mojang:minecraft:$minecraft")
-	mappings(loom.layered {
-		officialMojangMappings()
-		parchment("org.parchmentmc.data:parchment-${versionProp("parchment_minecraft_version")}:${versionProp("parchment_mappings_version")}@zip")
-	})
-	modImplementation("net.fabricmc:fabric-loader:${versionProp("fabric_loader")}")
-}
+	val shadowBundle: Configuration by configurations.creating {
+		isCanBeConsumed = false
+		isCanBeResolved = true
+	}
 
-tasks.processResources {
-	applyProperties(project, listOf("${prop("mod.id")}-common.mixin.json"))
-}
+	dependencies {
+	}
 
-java {
-	withSourcesJar()
-	val java = if (stonecutter.eval(minecraft, ">=1.20.5"))
-		JavaVersion.VERSION_21 else JavaVersion.VERSION_17
-	targetCompatibility = java
-	sourceCompatibility = java
-}
+	tasks.processResources {
+		val props = mutableMapOf(
+			"minecraft_version" to mcVersion,
 
-tasks.build {
-	group = "versioned"
-	description = "Must run through 'chiseledBuild'"
+			"mod_version" to modVersion,
+			"mod_group" to modGroup,
+			"mod_id" to modId,
+
+			"mod_name" to modName,
+			"mod_description" to modDescription,
+			"mod_license" to modLicense,
+			"mod_authors_fabric" to modAuthors.split(",").joinToString(", ") { "\"$it\"" },
+			"mod_authors_forge" to modAuthors,
+		)
+
+		inputs.properties(props)
+		filesMatching(listOf("META-INF/neoforge.mods.toml", "fabric.mod.json", "*.mixin.json", "pack.mcmeta")) {
+			expand(props)
+		}
+	}
+
+	loom {
+		runs {
+			val runDir = "../../../.runs"
+
+			named("client") {
+				client()
+				configName = "Client"
+				runDir("$runDir/client")
+				source(sourceSets["main"])
+				programArgs("--username=Dev")
+				isIdeConfigGenerated = true
+			}
+			named("server") {
+				server()
+				configName = "Server"
+				runDir("$runDir/server")
+				source(sourceSets["main"])
+				isIdeConfigGenerated = true
+			}
+		}
+	}
+
+	tasks.remapJar {
+		injectAccessWidener = true
+	}
 }
