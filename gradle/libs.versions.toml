@@ -2,6 +2,7 @@
 manifold = "2025.1.25"
 
 [plugins]
+ideaExt = { id = "org.jetbrains.gradle.plugin.idea-ext", version = "1.1.10" }
 
 [libraries]
 preprocessor = { group = "systems.manifold", name = "manifold-preprocessor", version.ref = "manifold" }

@@ -2,11 +2,10 @@
 build/
 gradle/wrapper/gradle-wrapper.jar
 
-build.properties
-.architectury-transformer
-
 ### Minecraft ###
 .runs/
+build.properties
+.architectury-transformer
 
 ### IntelliJ IDEA ###
 .idea/
