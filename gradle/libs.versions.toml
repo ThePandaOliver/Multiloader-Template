@@ -3,6 +3,10 @@ manifold = "2025.1.25"
 
 [plugins]
 ideaExt = { id = "org.jetbrains.gradle.plugin.idea-ext", version = "1.1.10" }
+shadow = { id = "com.gradleup.shadow", version = "8.3.6" }
+architecturyPlugin = { id = "architectury-plugin", version = "3.4-SNAPSHOT" }
+architecturyLoom = { id = "dev.architectury.loom", version = "1.10-SNAPSHOT" }
+forgix = { id = "io.github.pacifistmc.forgix", version = "2.0.0-SNAPSHOT.5.1" }
 
 [libraries]
 preprocessor = { group = "systems.manifold", name = "manifold-preprocessor", version.ref = "manifold" }

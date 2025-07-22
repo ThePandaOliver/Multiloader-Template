@@ -10,9 +10,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class MinecraftMixin {
 	@Inject(method = "<init>", at = @At("TAIL"))
 	private static void init(CallbackInfo info) {
-		#if VER == MC1_21_8
+		#if MC_VER == MC_1_21_8
 		System.out.println("Hello from 1.21.8");
-		#elif VER == MC1_21_7
+		#elif MC_VER == MC_1_21_7
 		System.out.println("Hello from 1.21.7");
 		#endif
 	}

@@ -1,13 +1,8 @@
 @file:Suppress("UnstableApiUsage")
 
-plugins {
-    id("dev.architectury.loom")
-    id("architectury-plugin")
-}
-
 val neoforgeLoaderVersion: String by extra
 
-base.archivesName = "${rootProject.base.archivesName}-fabric"
+base.archivesName = "${rootProject.base.archivesName.get()}-neoforge"
 
 architectury {
     platformSetupLoomIde()
