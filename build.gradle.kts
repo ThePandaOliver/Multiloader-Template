@@ -1,6 +1,7 @@
 @file:Suppress("UnstableApiUsage")
 
 import net.fabricmc.loom.task.RemapJarTask
+import org.gradle.kotlin.dsl.support.serviceOf
 import org.jetbrains.gradle.ext.packagePrefix
 import org.jetbrains.gradle.ext.settings
 
@@ -183,6 +184,8 @@ subprojects {
 evaluationDependsOnChildren()
 
 forgix {
+	archiveClassifier = ""
+
 	fabric {
 		inputJar = project(":fabric").tasks.named<RemapJarTask>("remapJar").get().archiveFile
 	}
@@ -194,10 +197,89 @@ forgix {
 	autoRun = true
 
 	multiversion {
+		destinationDirectory
+		archiveVersion = modVersion
+
+		val versions =  file("versionProperties").listFiles { file ->
+			file.isFile && file.extension == "properties"
+		}.map { file -> file.nameWithoutExtension }
+
 		inputJars = project.files(
-			"build/forgix/Template-0.1.0+1.21.8-fabric-neoforge.jar",
-			"build/forgix/Template-0.1.0+1.21.7-fabric-neoforge.jar",
-			"build/forgix/Template-0.1.0+1.21.6-fabric-neoforge.jar"
+			versions.map { version -> "build/forgix/${rootProject.name}-$modVersion+$version.jar" }
 		)
+	}
+}
+
+tasks.register("buildAllVersions") {
+	group = "build"
+	description = "Build for all Minecraft versions found in versionProperties folder"
+	dependsOn("clean")
+	finalizedBy("mergeVersions")
+
+	doLast {
+		val versionsFolder = file("versionProperties")
+		var successCount = 0
+		var failedCount = 0
+		val failedVersions = mutableListOf<String>()
+
+		logger.lifecycle("Starting build process for all Minecraft versions...\n")
+
+		if (!versionsFolder.exists()) 
+			throw GradleException("Error: Versions folder 'versionProperties' not found!")
+
+		val propertiesFiles = versionsFolder.listFiles { file ->
+			file.isFile && file.extension == "properties"
+		}.toList()
+
+		if (propertiesFiles.isEmpty()) {
+			println("No .properties files found in versionProperties folder")
+			return@doLast
+		}
+
+		val execOps = project.serviceOf<ExecOperations>()
+		for (propertiesFile in propertiesFiles) {
+			val filename = propertiesFile.nameWithoutExtension
+
+			println("Building for Minecraft version: $filename")
+			println("Using properties file: ${propertiesFile.absolutePath}")
+
+			try {
+				val buildResult = execOps.exec {
+					if (System.getProperty("os.name").lowercase().contains("windows")) {
+						commandLine("cmd", "/c", "gradlew.bat", "build", "-PmcVersion=$filename")
+					} else {
+						commandLine("./gradlew", "build", "-PmcVersion=$filename")
+					}
+					isIgnoreExitValue = true
+				}
+
+				if (buildResult.exitValue == 0) {
+					println("Successfully built for version $filename")
+					successCount++
+				} else {
+					println("Failed to build for version $filename")
+					failedCount++
+					failedVersions.add(filename)
+				}
+			} catch (e: Exception) {
+				println("Failed to build for version $filename: ${e.message}")
+				failedCount++
+				failedVersions.add(filename)
+			}
+
+			println("----------------------------------------")
+		}
+
+		println()
+		println("Build Summary:")
+		println("Successful builds: $successCount")
+		println("Failed builds: $failedCount")
+
+		if (failedCount > 0) {
+			println("Failed versions: ${failedVersions.joinToString(", ")}")
+			throw GradleException("$failedCount build(s) failed")
+		} else {
+			println("All builds completed successfully!")
+		}
 	}
 }

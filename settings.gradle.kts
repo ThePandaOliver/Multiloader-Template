@@ -19,15 +19,15 @@ val mcVersion: String by settings
 
 // Load version specific properties
 fun loadVersionProperties() {
-	val availableVersions = rootDir.resolve("versions")
+	val availableVersions = rootDir.resolve("versionProperties")
 		.listFilesOrdered { it.extension == "properties" } // Get all property files in order
 		.filter { it.isFile }
 		.map { it.nameWithoutExtension }
-	require(availableVersions.isNotEmpty()) { "No versions found in versions directory" }
+	require(availableVersions.isNotEmpty()) { "No versionProperties found in versionProperties directory" }
 	require(mcVersion in availableVersions) { "Invalid Minecraft version: $mcVersion" }
 
 	val props = Properties()
-	props.load(rootDir.resolve("versions/$mcVersion.properties").inputStream())
+	props.load(rootDir.resolve("versionProperties/$mcVersion.properties").inputStream())
 
 	props.forEach { (k, v) ->
 		if (k is String) {
