@@ -1,27 +1,44 @@
 @file:Suppress("UnstableApiUsage")
 
+plugins {
+	alias(libs.plugins.neoforgeModdev)
+}
+
+val parchmentMinecraftVersion: String by extra
+val parchmentMappingVersion: String by extra
 val neoforgeLoaderVersion: String by extra
 
 base.archivesName = "${rootProject.base.archivesName.get()}-neoforge"
 
-architectury {
-    platformSetupLoomIde()
-    neoForge()
+neoForge {
+	version = neoforgeLoaderVersion
+
+	validateAccessTransformers = true
+
+	parchment {
+		minecraftVersion = parchmentMinecraftVersion
+		mappingsVersion = parchmentMappingVersion
+	}
+
+	runs {
+		register("client") {
+			client()
+			gameDirectory.set(file("../.runs"))
+		}
+		register("server") {
+			server()
+			gameDirectory.set(file("../.runs"))
+		}
+	}
 }
 
 configurations {
-    compileClasspath.get().extendsFrom(commonBundle.get())
-    runtimeClasspath.get().extendsFrom(commonBundle.get())
-    get("developmentNeoForge").extendsFrom(commonBundle.get())
+	configurations["additionalRuntimeClasspath"].extendsFrom(common.get())
 }
 
-repositories {
-	maven("https://maven.neoforged.net/releases/")
-}
-
-dependencies {
-    neoForge("net.neoforged:neoforge:$neoforgeLoaderVersion")
-
-    commonBundle(project(":", "namedElements")) { isTransitive = false }
-    shadowBundle(project(":", "transformProductionNeoForge")) { isTransitive = false }
+tasks {
+	jar {
+		archiveClassifier = "dev"
+		finalizedBy("shadowJar")
+	}
 }

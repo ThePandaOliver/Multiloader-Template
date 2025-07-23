@@ -1,5 +1,6 @@
 @file:Suppress("UnstableApiUsage")
 
+import net.fabricmc.loom.task.RemapJarTask
 import org.jetbrains.gradle.ext.packagePrefix
 import org.jetbrains.gradle.ext.settings
 
@@ -8,10 +9,10 @@ plugins {
 	java
 	idea
 	alias(libs.plugins.ideaExt)
-
 	alias(libs.plugins.shadow)
-	alias(libs.plugins.architecturyPlugin)
-	alias(libs.plugins.architecturyLoom)
+
+	alias(libs.plugins.neoforgeModdev)
+	alias(libs.plugins.fabricLoom) apply false
 	alias(libs.plugins.forgix)
 }
 
@@ -41,7 +42,6 @@ fun createBuildProperties() {
 createBuildProperties()
 
 val mcVersion: String by extra
-val buildFor: String by extra
 
 val modVersion: String by extra
 val modGroup: String by extra
@@ -56,46 +56,44 @@ val parchmentMinecraftVersion: String by extra
 val parchmentMappingVersion: String by extra
 val fabricLoaderVersion: String by extra
 val neoforgeLoaderVersion: String by extra
+val neoformVersion: String by extra
 
-architectury {
-	common(buildFor.split(","))
+neoForge {
+	neoFormVersion = neoformVersion
+
+	validateAccessTransformers = true
+
+	parchment {
+		minecraftVersion = parchmentMinecraftVersion
+		mappingsVersion = parchmentMappingVersion
+	}
 }
 
-loom {
-	runConfigs.configureEach { isIdeConfigGenerated = false }
+repositories {
+	maven("https://repo.spongepowered.org/repository/maven-public/")
+}
+
+dependencies {
+	compileOnly("org.spongepowered:mixin:0.8.5:processor")
+	compileOnly("io.github.llamalad7:mixinextras-common:0.3.5")
+	annotationProcessor("io.github.llamalad7:mixinextras-common:0.3.5")
 }
 
 allprojects {
 	apply(plugin = "java")
-	apply(plugin = rootProject.libs.plugins.architecturyPlugin.get().pluginId)
-	apply(plugin = rootProject.libs.plugins.architecturyLoom.get().pluginId)
+	apply(plugin = "idea")
+	apply(plugin = "org.jetbrains.gradle.plugin.idea-ext")
+	apply(plugin = rootProject.libs.plugins.ideaExt.get().pluginId)
+	apply(plugin = rootProject.libs.plugins.shadow.get().pluginId)
 
 	version = "$modVersion+$mcVersion"
 	group = modGroup
-
-	loom {
-		silentMojangMappingsLicense()
-		accessWidenerPath = rootProject.file("src/main/resources/$modId.accesswidener")
-
-		decompilers {
-			get("vineflower").apply { // Shows the method name of lambdas in a comment
-				options.put("mark-corresponding-synthetics", "1")
-			}
-		}
-	}
 
 	repositories {
 		maven("https://maven.parchmentmc.org/")
 	}
 
 	dependencies {
-		minecraft("com.mojang:minecraft:$mcVersion")
-		mappings(loom.layered {
-			officialMojangMappings()
-			parchment("org.parchmentmc.data:parchment-$parchmentMinecraftVersion:$parchmentMappingVersion@zip")
-		})
-		modImplementation("net.fabricmc:fabric-loader:$fabricLoaderVersion")
-
 		annotationProcessor(rootProject.libs.preprocessor)
 	}
 
@@ -106,8 +104,19 @@ allprojects {
 		sourceCompatibility = java
 	}
 
-	tasks.withType(JavaCompile::class) {
-		options.compilerArgs.add("-Xplugin:Manifold")
+	tasks {
+		withType(JavaCompile::class) {
+			options.compilerArgs.add("-Xplugin:Manifold")
+		}
+
+		test {
+			enabled = false
+		}
+
+		compileTestJava {
+			enabled = false
+		}
+
 	}
 
 	idea {
@@ -123,83 +132,72 @@ allprojects {
 }
 
 subprojects {
-	apply(plugin = rootProject.libs.plugins.shadow.get().pluginId)
-
-	val commonBundle: Configuration by configurations.creating {
-		isCanBeConsumed = false
+	val common: Configuration by configurations.creating {
 		isCanBeResolved = true
-	}
-
-	val shadowBundle: Configuration by configurations.creating {
 		isCanBeConsumed = false
-		isCanBeResolved = true
 	}
+	configurations.compileClasspath.get().extendsFrom(common)
+	configurations.runtimeClasspath.get().extendsFrom(common)
 
-	configurations {
-		compileClasspath.get().extendsFrom(commonBundle)
-		runtimeClasspath.get().extendsFrom(commonBundle)
+	val commonShadow: Configuration by configurations.creating {
+		isCanBeResolved = true
+		isCanBeConsumed = false
 	}
 
 	dependencies {
-	}
-
-	tasks.processResources {
-		val props = mutableMapOf(
-			"minecraft_version" to mcVersion,
-
-			"mod_version" to modVersion,
-			"mod_group" to modGroup,
-			"mod_id" to modId,
-
-			"mod_name" to modName,
-			"mod_description" to modDescription,
-			"mod_license" to modLicense,
-			"mod_authors_fabric" to modAuthors.split(",").joinToString(", ") { "\"$it\"" },
-			"mod_authors_forge" to modAuthors,
-		)
-
-		if (project.name == "fabric") props["fabric_loader_version"] = fabricLoaderVersion
-		if (project.name == "neoforge") props["neoforge_loader_version"] = neoforgeLoaderVersion
-
-		inputs.properties(props)
-		filesMatching(listOf("META-INF/neoforge.mods.toml", "fabric.mod.json", "*.mixin.json", "pack.mcmeta")) {
-			expand(props)
-		}
-	}
-
-	loom {
-		runs {
-			val runDir = "../.runs"
-
-			named("client") {
-				client()
-				configName = "Client"
-				runDir("$runDir/client")
-				source(sourceSets["main"])
-				programArgs("--username=Dev")
-				isIdeConfigGenerated = true
-			}
-			named("server") {
-				server()
-				configName = "Server"
-				runDir("$runDir/server")
-				source(sourceSets["main"])
-				isIdeConfigGenerated = true
-			}
-		}
+		common(project(":"))
+		commonShadow(project(":"))
 	}
 
 	tasks {
+		processResources {
+			val props = mutableMapOf(
+				"minecraft_version" to mcVersion,
+
+				"mod_version" to modVersion,
+				"mod_group" to modGroup,
+				"mod_id" to modId,
+
+				"mod_name" to modName,
+				"mod_description" to modDescription,
+				"mod_license" to modLicense,
+				"mod_authors_fabric" to modAuthors.split(",").joinToString(", ") { "\"$it\"" },
+				"mod_authors_forge" to modAuthors,
+			)
+
+			if (project.name == "fabric") props["fabric_loader_version"] = fabricLoaderVersion
+			if (project.name == "neoforge") props["neoforge_loader_version"] = neoforgeLoaderVersion
+
+			inputs.properties(props)
+			filesMatching(listOf("META-INF/neoforge.mods.toml", "fabric.mod.json", "*.mixin.json", "pack.mcmeta")) {
+				expand(props)
+			}
+		}
+
 		shadowJar {
-			configurations = listOf(shadowBundle)
-			archiveClassifier = "dev-shadow"
-
-			exclude("architectury.common.json")
+			configurations = listOf(commonShadow)
 		}
+	}
+}
 
-		remapJar {
-			injectAccessWidener = true
-			inputFile = shadowJar.get().archiveFile
-		}
+evaluationDependsOnChildren()
+
+forgix {
+	fabric {
+		inputJar = project(":fabric").tasks.named<RemapJarTask>("remapJar").get().archiveFile
+	}
+
+	neoforge {
+		inputJar = project(":neoforge").tasks.shadowJar.get().archiveFile
+	}
+
+	autoRun = true
+
+	multiversion {
+		inputJars = project.files(
+			"build/forgix/Template-0.1.0+1.21.8-fabric-neoforge.jar",
+			"build/forgix/Template-0.1.0+1.21.7-fabric-neoforge.jar",
+			"build/forgix/Template-0.1.0+1.21.6-fabric-neoforge.jar"
+		)
 	}
 }

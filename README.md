@@ -2,7 +2,9 @@
 
 This template helps you create Minecraft mods that work with Fabric, Forge, and NeoForge. It includes:
 
-- **[Architectury Loom](https://docs.architectury.dev/loom/introduction)** – Manages multiple mod loaders easily.
+- **[Fabric Loom](https://github.com/FabricMC/fabric-loom)** – Is used for compiling and providing the Minecraft codebase for the Fabric mod
+- **[NeoForge ModDev](https://github.com/neoforged/ModDevGradle)** – Is used for compiling and providing the Minecraft codebase for the NeoForge mod and common
+  codebase via NeoForm
 - **[Manifold Pre-processing](https://github.com/manifold-systems/manifold/tree/master/manifold-deps-parent/manifold-preprocessor/)** – Adds pre-processing
   functionality to Java. Will be used for multi-version support without the need of separate branches or sub-packages.
 - **[Forgix](https://github.com/PacifistMC/Forgix)** – Can combine all supported Minecraft versions and mod-loader variants of the mod into a single jar.
