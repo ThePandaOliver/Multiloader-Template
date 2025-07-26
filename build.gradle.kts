@@ -4,17 +4,20 @@ import net.fabricmc.loom.task.RemapJarTask
 import org.gradle.kotlin.dsl.support.serviceOf
 import org.jetbrains.gradle.ext.packagePrefix
 import org.jetbrains.gradle.ext.settings
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 
 plugins {
 	java
 	idea
+	alias(libs.plugins.kotlinJvm)
 	alias(libs.plugins.ideaExt)
 	alias(libs.plugins.shadow)
 
 	alias(libs.plugins.neoforgeModdev)
 	alias(libs.plugins.fabricLoom) apply false
 	alias(libs.plugins.forgix)
+	id("dev.pandasystems.preprocessor") version "0.1-POC.3"
 }
 
 // Transfer all properties from settings to projects
@@ -83,6 +86,7 @@ dependencies {
 allprojects {
 	apply(plugin = "java")
 	apply(plugin = "idea")
+	apply(plugin = rootProject.libs.plugins.kotlinJvm.get().pluginId)
 	apply(plugin = "org.jetbrains.gradle.plugin.idea-ext")
 	apply(plugin = rootProject.libs.plugins.ideaExt.get().pluginId)
 	apply(plugin = rootProject.libs.plugins.shadow.get().pluginId)
@@ -110,6 +114,10 @@ allprojects {
 			options.compilerArgs.add("-Xplugin:Manifold")
 		}
 
+		withType(KotlinCompile::class) {
+			compilerOptions.freeCompilerArgs.add("-Xplugin:Manifold")
+		}
+
 		test {
 			enabled = false
 		}
@@ -118,6 +126,9 @@ allprojects {
 			enabled = false
 		}
 
+		compileTestKotlin {
+			enabled = false
+		}
 	}
 
 	idea {
@@ -127,6 +138,7 @@ allprojects {
 					if (rootProject != project) "$it.${project.name.lowercase()}" else it
 				}
 				packagePrefix["src/main/java"] = packagePrefixStr
+				packagePrefix["src/main/kotlin"] = packagePrefixStr
 			}
 		}
 	}
@@ -232,7 +244,7 @@ tasks.register("buildAllVersions") {
 		}.toList()
 
 		if (propertiesFiles.isEmpty()) {
-			println("No .properties files found in versionProperties folder")
+			logger.lifecycle("No .properties files found in versionProperties folder")
 			return@doLast
 		}
 
@@ -240,8 +252,8 @@ tasks.register("buildAllVersions") {
 		for (propertiesFile in propertiesFiles) {
 			val filename = propertiesFile.nameWithoutExtension
 
-			println("Building for Minecraft version: $filename")
-			println("Using properties file: ${propertiesFile.absolutePath}")
+			logger.lifecycle("Building for Minecraft version: $filename")
+			logger.lifecycle("Using properties file: ${propertiesFile.absolutePath}")
 
 			try {
 				val buildResult = execOps.exec {
@@ -254,32 +266,31 @@ tasks.register("buildAllVersions") {
 				}
 
 				if (buildResult.exitValue == 0) {
-					println("Successfully built for version $filename")
+					logger.lifecycle("Successfully built for version $filename")
 					successCount++
 				} else {
-					println("Failed to build for version $filename")
+					logger.lifecycle("Failed to build for version $filename")
 					failedCount++
 					failedVersions.add(filename)
 				}
 			} catch (e: Exception) {
-				println("Failed to build for version $filename: ${e.message}")
+				logger.lifecycle("Failed to build for version $filename: ${e.message}")
 				failedCount++
 				failedVersions.add(filename)
 			}
 
-			println("----------------------------------------")
+			logger.lifecycle("----------------------------------------")
 		}
 
-		println()
-		println("Build Summary:")
-		println("Successful builds: $successCount")
-		println("Failed builds: $failedCount")
+		logger.lifecycle("\nBuild Summary:")
+		logger.lifecycle("Successful builds: $successCount")
+		logger.lifecycle("Failed builds: $failedCount")
 
 		if (failedCount > 0) {
-			println("Failed versions: ${failedVersions.joinToString(", ")}")
+			logger.error("Failed versions: ${failedVersions.joinToString(", ")}")
 			throw GradleException("$failedCount build(s) failed")
 		} else {
-			println("All builds completed successfully!")
+			logger.lifecycle("All builds completed successfully!")
 		}
 	}
 }

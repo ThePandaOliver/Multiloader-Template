@@ -12,7 +12,7 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "com.example.template.fabric.TemplateModFabric"
+			"com.example.template.fabric.TemplateModFabric"
     ]
   },
   "mixins": [
