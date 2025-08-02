@@ -1,7 +1,7 @@
 {
   "required": true,
   "package": "com.example.template.fabric.mixin",
-  "minVersion": "JAVA_17",
+  "minVersion": "0.8",
   "mixins": [
   ],
   "injectors": {

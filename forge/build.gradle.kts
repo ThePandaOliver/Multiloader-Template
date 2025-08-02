@@ -9,6 +9,13 @@ architectury {
 	forge()
 }
 
+loom {
+	forge {
+		mixinConfig("template-forge.mixins.json")
+		mixinConfig("template-common.mixins.json")
+	}
+}
+
 configurations.getByName("developmentForge").extendsFrom(configurations.common.get())
 
 repositories {
