@@ -6,7 +6,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.fml.common.Mod;
 
-#if MC_VER > MC_1_20_2
+#if MC_VER >= MC_1_21
 @Mod(value = TemplateModCommon.MOD_ID, dist = Dist.CLIENT)
 #endif
 @OnlyIn(Dist.CLIENT)

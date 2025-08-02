@@ -231,7 +231,7 @@ forgix {
 
 		val versions =  file("versionProperties").listFiles { file ->
 			file.isFile && file.extension == "properties"
-		}.map { file -> file.nameWithoutExtension }
+		}!!.map { file -> file.nameWithoutExtension }
 
 		inputJars = project.files(
 			versions.map { version -> "build/forgix/${rootProject.name}-$modVersion+$version.jar" }
