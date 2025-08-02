@@ -6,21 +6,21 @@ license = "${mod_license}"
 modId = "${mod_id}"
 version = "${mod_version}"
 displayName = "${mod_name}"
-authors = "Me!"
+authors = "${mod_authors_forge}"
 description = "${mod_description}"
 logoFile = "assets/${mod_id}/icon.png"
 logoBlur = false
 
 [[dependencies."${mod_id}"]]
-modId = "forge"
+modId = "minecraft"
 mandatory = true
-versionRange = "[${forge_loader_version},)"
+versionRange = "[${minecraft_version}]"
 ordering = "NONE"
 side = "BOTH"
 
 [[dependencies."${mod_id}"]]
-modId = "minecraft"
+modId = "forge"
 mandatory = true
-versionRange = "[${minecraft_version},)"
+versionRange = "[${forge_loader_version},)"
 ordering = "NONE"
 side = "BOTH"

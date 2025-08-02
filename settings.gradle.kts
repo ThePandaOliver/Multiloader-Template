@@ -20,9 +20,21 @@ val mcVersion: String by settings
 // Load version specific properties
 fun loadVersionProperties() {
 	val availableVersions = rootDir.resolve("versionProperties")
-		.listFilesOrdered { it.extension == "properties" } // Get all property files in order
+		.listFiles { file -> file.extension == "properties" }
 		.filter { it.isFile }
 		.map { it.nameWithoutExtension }
+		.sortedWith { v1, v2 ->
+			val parts1 = v1.split(".").map { it.toInt() }
+			val parts2 = v2.split(".").map { it.toInt() }
+
+			for (i in 0 until maxOf(parts1.size, parts2.size)) {
+				val part1 = parts1.getOrElse(i) { 0 }
+				val part2 = parts2.getOrElse(i) { 0 }
+				if (part1 != part2) return@sortedWith part1 - part2
+			}
+			0
+		}
+
 	require(availableVersions.isNotEmpty()) { "No versionProperties found in versionProperties directory" }
 	require(mcVersion in availableVersions) { "Invalid Minecraft version: $mcVersion" }
 

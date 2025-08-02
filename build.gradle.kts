@@ -41,6 +41,7 @@ fun createBuildProperties() {
 }
 createBuildProperties()
 
+val javaVersion: String by extra
 val mcVersion: String by extra
 val buildFor: String by extra
 
@@ -116,12 +117,14 @@ allprojects {
 			officialMojangMappings()
 			parchment("org.parchmentmc.data:parchment-$parchmentMinecraftVersion:$parchmentMappingVersion@zip")
 		})
+		modImplementation("net.fabricmc:fabric-loader:$fabricLoaderVersion")
+
 		annotationProcessor(rootProject.libs.preprocessor)
 	}
 
 	java {
 		withSourcesJar()
-		val java = JavaVersion.VERSION_21
+		val java = JavaVersion.toVersion(javaVersion)
 		targetCompatibility = java
 		sourceCompatibility = java
 	}
@@ -172,6 +175,7 @@ subprojects {
 	tasks {
 		processResources {
 			val props = mutableMapOf(
+				"java_version" to javaVersion,
 				"minecraft_version" to mcVersion,
 
 				"mod_version" to modVersion,
@@ -190,7 +194,7 @@ subprojects {
 			if (project.name == "forge") props["forge_loader_version"] = forgeLoaderVersion ?: ""
 
 			inputs.properties(props)
-			filesMatching(listOf("META-INF/neoforge.mods.toml", "fabric.mod.json", "*.mixin.json", "pack.mcmeta")) {
+			filesMatching(listOf("META-INF/mods.toml", "META-INF/neoforge.mods.toml", "fabric.mod.json", "**.mixins.json", "pack.mcmeta")) {
 				expand(props)
 			}
 		}
@@ -220,8 +224,6 @@ forgix {
 	neoforge {
 		inputJar = project(":neoforge").tasks.named<RemapJarTask>("remapJar").get().archiveFile
 	}
-
-	autoRun = true
 
 	multiversion {
 		destinationDirectory
@@ -273,9 +275,9 @@ tasks.register("buildAllVersions") {
 			try {
 				val buildResult = execOps.exec {
 					if (System.getProperty("os.name").lowercase().contains("windows")) {
-						commandLine("cmd", "/c", "gradlew.bat", "build", "-PmcVersion=$filename")
+						commandLine("cmd", "/c", "gradlew.bat", "build", "mergeJars", "-PmcVersion=$filename")
 					} else {
-						commandLine("./gradlew", "build", "-PmcVersion=$filename")
+						commandLine("./gradlew", "build", "mergeJars", "-PmcVersion=$filename")
 					}
 					isIgnoreExitValue = true
 				}
