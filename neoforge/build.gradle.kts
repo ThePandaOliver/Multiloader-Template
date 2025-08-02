@@ -17,8 +17,8 @@ repositories {
 dependencies {
 	neoForge("net.neoforged:neoforge:$neoforgeLoaderVersion")
 
-	common(project(":", "namedElements")) { isTransitive = false }
-	commonShadow(project(":", "transformProductionNeoForge")) { isTransitive = false }
+	common(project(":", "namedElements"))
+	commonShadow(project(":", "transformProductionNeoForge"))
 }
 
 tasks {

@@ -212,17 +212,25 @@ subprojects {
 	}
 }
 
-evaluationDependsOnChildren()
-
 forgix {
 	archiveClassifier = ""
 
-	fabric {
-		inputJar = project(":fabric").tasks.named<RemapJarTask>("remapJar").get().archiveFile
+	findProject(":fabric")?.let {
+		fabric {
+			inputJar = it.tasks.named<RemapJarTask>("remapJar").get().archiveFile
+		}
 	}
 
-	neoforge {
-		inputJar = project(":neoforge").tasks.named<RemapJarTask>("remapJar").get().archiveFile
+	findProject(":neoforge")?.let {
+		neoforge {
+			inputJar = it.tasks.named<RemapJarTask>("remapJar").get().archiveFile
+		}
+	}
+
+	findProject(":forge")?.let {
+		forge {
+			inputJar = it.tasks.named<RemapJarTask>("remapJar").get().archiveFile
+		}
 	}
 
 	multiversion {

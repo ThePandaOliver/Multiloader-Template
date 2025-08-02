@@ -18,8 +18,8 @@ repositories {
 dependencies {
 	forge("net.minecraftforge:forge:$mcVersion-$forgeLoaderVersion")
 
-	common(project(":", "namedElements")) { isTransitive = false }
-	commonShadow(project(":", "transformProductionForge")) { isTransitive = false }
+	common(project(":", "namedElements"))
+	commonShadow(project(":", "transformProductionForge"))
 }
 
 tasks {

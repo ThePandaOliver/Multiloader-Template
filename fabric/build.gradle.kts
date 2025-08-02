@@ -13,6 +13,6 @@ configurations.getByName("developmentFabric").extendsFrom(configurations.common.
 dependencies {
 	modImplementation("net.fabricmc:fabric-loader:$fabricLoaderVersion")
 
-	common(project(":", "namedElements")) { isTransitive = false }
-	commonShadow(project(":", "transformProductionFabric")) { isTransitive = false }
+	common(project(":", "namedElements"))
+	commonShadow(project(":", "transformProductionFabric"))
 }
