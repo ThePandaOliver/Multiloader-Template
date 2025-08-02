@@ -11,9 +11,8 @@ plugins {
 	idea
 	alias(libs.plugins.ideaExt)
 	alias(libs.plugins.shadow)
-
-	alias(libs.plugins.neoforgeModdev)
-	alias(libs.plugins.fabricLoom) apply false
+	alias(libs.plugins.architecturyPlugin)
+	alias(libs.plugins.architecturyLoom)
 	alias(libs.plugins.forgix)
 }
 
@@ -43,6 +42,7 @@ fun createBuildProperties() {
 createBuildProperties()
 
 val mcVersion: String by extra
+val buildFor: String by extra
 
 val modVersion: String by extra
 val modGroup: String by extra
@@ -55,46 +55,67 @@ val modLicense: String by extra
 
 val parchmentMinecraftVersion: String by extra
 val parchmentMappingVersion: String by extra
-val fabricLoaderVersion: String by extra
-val neoforgeLoaderVersion: String by extra
-val neoformVersion: String by extra
+val fabricLoaderVersion: String? by extra
+val neoforgeLoaderVersion: String? by extra
+val forgeLoaderVersion: String? by extra
 
-neoForge {
-	neoFormVersion = neoformVersion
-
-	validateAccessTransformers = true
-
-	parchment {
-		minecraftVersion = parchmentMinecraftVersion
-		mappingsVersion = parchmentMappingVersion
-	}
-}
-
-repositories {
-	maven("https://repo.spongepowered.org/repository/maven-public/")
-}
-
-dependencies {
-	compileOnly("org.spongepowered:mixin:0.8.5:processor")
-	compileOnly("io.github.llamalad7:mixinextras-common:0.3.5")
-	annotationProcessor("io.github.llamalad7:mixinextras-common:0.3.5")
+architectury {
+	minecraft = mcVersion
+	common(buildFor.split(","))
 }
 
 allprojects {
 	apply(plugin = "java")
 	apply(plugin = "idea")
-	apply(plugin = "org.jetbrains.gradle.plugin.idea-ext")
 	apply(plugin = rootProject.libs.plugins.ideaExt.get().pluginId)
 	apply(plugin = rootProject.libs.plugins.shadow.get().pluginId)
+	apply(plugin = rootProject.libs.plugins.architecturyPlugin.get().pluginId)
+	apply(plugin = rootProject.libs.plugins.architecturyLoom.get().pluginId)
 
 	version = "$modVersion+$mcVersion"
 	group = modGroup
+
+	loom {
+		silentMojangMappingsLicense()
+		accessWidenerPath = rootProject.file("src/main/resources/$modId.accesswidener")
+
+		runs {
+			val runDir = "../.runs"
+
+			named("client") {
+				client()
+				configName = "Client"
+				runDir("$runDir/client")
+				programArgs("--username=Dev")
+			}
+			named("server") {
+				server()
+				configName = "Server"
+				runDir("$runDir/server")
+			}
+		}
+
+		runs.all {
+			ideConfigGenerated(false)
+		}
+
+		decompilers {
+			get("vineflower").apply { // Shows the method name of lambdas in a comment
+				options.put("mark-corresponding-synthetics", "1")
+			}
+		}
+	}
 
 	repositories {
 		maven("https://maven.parchmentmc.org/")
 	}
 
 	dependencies {
+		minecraft("com.mojang:minecraft:$mcVersion")
+		mappings(loom.layered {
+			officialMojangMappings()
+			parchment("org.parchmentmc.data:parchment-$parchmentMinecraftVersion:$parchmentMappingVersion@zip")
+		})
 		annotationProcessor(rootProject.libs.preprocessor)
 	}
 
@@ -117,7 +138,6 @@ allprojects {
 		compileTestJava {
 			enabled = false
 		}
-
 	}
 
 	idea {
@@ -145,9 +165,8 @@ subprojects {
 		isCanBeConsumed = false
 	}
 
-	dependencies {
-		common(project(":"))
-		commonShadow(project(":"))
+	loom.runs.all {
+		ideConfigGenerated(true)
 	}
 
 	tasks {
@@ -166,8 +185,9 @@ subprojects {
 				"mod_authors_forge" to modAuthors,
 			)
 
-			if (project.name == "fabric") props["fabric_loader_version"] = fabricLoaderVersion
-			if (project.name == "neoforge") props["neoforge_loader_version"] = neoforgeLoaderVersion
+			if (project.name == "fabric") props["fabric_loader_version"] = fabricLoaderVersion ?: ""
+			if (project.name == "neoforge") props["neoforge_loader_version"] = neoforgeLoaderVersion ?: ""
+			if (project.name == "forge") props["forge_loader_version"] = forgeLoaderVersion ?: ""
 
 			inputs.properties(props)
 			filesMatching(listOf("META-INF/neoforge.mods.toml", "fabric.mod.json", "*.mixin.json", "pack.mcmeta")) {
@@ -175,8 +195,15 @@ subprojects {
 			}
 		}
 
+		remapJar {
+			inputFile = shadowJar.get().archiveFile
+			injectAccessWidener = true
+		}
+
 		shadowJar {
 			configurations = listOf(commonShadow)
+			archiveClassifier.set("dev-shadow")
+			exclude("architectury.common.json")
 		}
 	}
 }
@@ -191,7 +218,7 @@ forgix {
 	}
 
 	neoforge {
-		inputJar = project(":neoforge").tasks.shadowJar.get().archiveFile
+		inputJar = project(":neoforge").tasks.named<RemapJarTask>("remapJar").get().archiveFile
 	}
 
 	autoRun = true
@@ -232,7 +259,7 @@ tasks.register("buildAllVersions") {
 		}.toList()
 
 		if (propertiesFiles.isEmpty()) {
-			println("No .properties files found in versionProperties folder")
+			logger.lifecycle("No .properties files found in versionProperties folder")
 			return@doLast
 		}
 
@@ -240,8 +267,8 @@ tasks.register("buildAllVersions") {
 		for (propertiesFile in propertiesFiles) {
 			val filename = propertiesFile.nameWithoutExtension
 
-			println("Building for Minecraft version: $filename")
-			println("Using properties file: ${propertiesFile.absolutePath}")
+			logger.lifecycle("Building for Minecraft version: $filename")
+			logger.lifecycle("Using properties file: ${propertiesFile.absolutePath}")
 
 			try {
 				val buildResult = execOps.exec {
@@ -254,32 +281,31 @@ tasks.register("buildAllVersions") {
 				}
 
 				if (buildResult.exitValue == 0) {
-					println("Successfully built for version $filename")
+					logger.lifecycle("Successfully built for version $filename")
 					successCount++
 				} else {
-					println("Failed to build for version $filename")
+					logger.lifecycle("Failed to build for version $filename")
 					failedCount++
 					failedVersions.add(filename)
 				}
 			} catch (e: Exception) {
-				println("Failed to build for version $filename: ${e.message}")
+				logger.lifecycle("Failed to build for version $filename: ${e.message}")
 				failedCount++
 				failedVersions.add(filename)
 			}
 
-			println("----------------------------------------")
+			logger.lifecycle("----------------------------------------")
 		}
 
-		println()
-		println("Build Summary:")
-		println("Successful builds: $successCount")
-		println("Failed builds: $failedCount")
+		logger.lifecycle("\nBuild Summary:")
+		logger.lifecycle("Successful builds: $successCount")
+		logger.lifecycle("Failed builds: $failedCount")
 
 		if (failedCount > 0) {
-			println("Failed versions: ${failedVersions.joinToString(", ")}")
+			logger.lifecycle("Failed versions: ${failedVersions.joinToString(", ")}")
 			throw GradleException("$failedCount build(s) failed")
 		} else {
-			println("All builds completed successfully!")
+			logger.lifecycle("All builds completed successfully!")
 		}
 	}
 }
