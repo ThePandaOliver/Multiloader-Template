@@ -1,25 +1,29 @@
 modLoader = "javafml"
 loaderVersion = "*"
+issueTrackerURL = "https://github.com/ThePandaOliver/Multiloader-Template/issues"
 license = "${mod_license}"
 
 [[mods]]
 modId = "${mod_id}"
 version = "${mod_version}"
 displayName = "${mod_name}"
-authors = "Me!"
+authors = "${mod_authors}"
 description = "${mod_description}"
 logoFile = "assets/${mod_id}/icon.png"
-logoBlur = false
 
 [[dependencies."${mod_id}"]]
 modId = "neoforge"
 type = "required"
-versionRange = "[${neoforge_loader_version},)"
+versionRange = "*"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies."${mod_id}"]]
+modId = "minecraft"
+type = "required"
+versionRange = "${loader_version}"
 ordering = "NONE"
 side = "BOTH"
 
 [[mixins]]
-config = "${mod_id}-common.mixins.json"
-
-[[mixins]]
-config = "${mod_id}-neoforge.mixins.json"
+config = "${mod_id}.mixins.json"

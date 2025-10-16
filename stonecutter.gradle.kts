@@ -1,36 +1,30 @@
+import org.jetbrains.gradle.ext.packagePrefix
+import org.jetbrains.gradle.ext.settings
+
 plugins {
 	id("dev.kikugie.stonecutter")
-	id("dev.architectury.loom") version "1.10-SNAPSHOT" apply false
+	kotlin("jvm") version "2.2.0" apply false
 	id("architectury-plugin") version "3.4-SNAPSHOT" apply false
-	id("com.github.johnrengelman.shadow") version "8.1.1" apply false
-	id("io.github.pacifistmc.forgix") version "1.2.9" apply false
+	id("dev.architectury.loom") version "1.11-SNAPSHOT" apply false
+	id("org.jetbrains.gradle.plugin.idea-ext") version "1.1.10"
 }
-stonecutter active "1.21.4" /* [SC] DO NOT EDIT */
+stonecutter active "1.21.10-fabric"
 
-// Builds every version into `build/libs/{mod.version}/{loader}`
-stonecutter registerChiseled tasks.register("chiseledBuild", stonecutter.chiseled) {
-	group = "project"
-	ofTask("buildAndCollect")
-}
-
-// Builds loader-specific versions into `build/libs/{mod.version}/{loader}`
-for (it in stonecutter.tree.branches) {
-	if (it.id.isEmpty()) continue
-	val loader = it.id.replaceFirstChar { it.uppercaseChar() }
-	stonecutter registerChiseled tasks.register("chiseledBuild$loader", stonecutter.chiseled) {
-		group = "project"
-		versions { branch, _ -> branch == it.id }
-		ofTask("buildAndCollect")
+stonecutter parameters {
+	constants {
+		match(node.metadata.project.substringAfterLast("-"), "fabric", "neoforge", "forge")
 	}
 }
 
-// Runs active versions for each loader
-for (it in stonecutter.tree.nodes) {
-	if (it.metadata != stonecutter.current || it.branch.id.isEmpty()) continue
-	val types = listOf("Client", "Server")
-	val loader = it.branch.id.replaceFirstChar { it.uppercaseChar() }
-	for (type in types) it.project.tasks.register("runActive$type$loader") {
-		group = "project"
-		dependsOn("run$type")
+val modGroup: String by project
+val modId: String by project
+
+idea {
+	module {
+		settings {
+			val packagePrefixStr = "$modGroup.$modId"
+			packagePrefix["src/main/kotlin"] = packagePrefixStr
+			packagePrefix["src/main/java"] = packagePrefixStr
+		}
 	}
 }

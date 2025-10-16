@@ -2,29 +2,28 @@ pluginManagement {
 	repositories {
 		mavenCentral()
 		gradlePluginPortal()
-		maven("https://maven.fabricmc.net/")
-		maven("https://maven.architectury.dev")
-		maven("https://maven.minecraftforge.net")
-		maven("https://maven.neoforged.net/releases/")
-//		maven("https://maven.kikugie.dev/snapshots")
+		maven("https://maven.architectury.dev/") { name = "Architectury" }
+		maven("https://maven.fabricmc.net/") { name = "Fabric" }
+		maven("https://maven.minecraftforge.net/") { name = "Forge" }
+		maven("https://maven.neoforged.net/releases/") { name = "NeoForge" }
+		maven("https://maven.kikugie.dev/snapshots") { name = "KikuGie Snapshots" }
 	}
 }
 
 plugins {
-	// Make sure the version here is the same as the dependency in buildSrc/build.gradle.kts
-	id("dev.kikugie.stonecutter") version "0.5.1"
-}
-
-stonecutter {
-	centralScript = "build.gradle.kts"
-	kotlinController = true
-	create(rootProject) {
-		versions("1.20", "1.20.5", "1.21", "1.21.2", "1.21.4")
-		vcsVersion = "1.21.4"
-		branch("fabric")
-		branch("forge") { versions("1.20") }
-		branch("neoforge") { versions("1.20.5", "1.21", "1.21.2", "1.21.4") }
-	}
+	id("dev.kikugie.stonecutter") version "0.7.10"
 }
 
 rootProject.name = "Template"
+
+stonecutter {
+	create(rootProject) {
+		fun mc(mcVersion: String, name: String = mcVersion, loaders: Iterable<String>) {
+			for (loader in loaders) {
+				version("$name-$loader", mcVersion)
+			}
+		}
+
+		mc("1.21.10", loaders = listOf("fabric", "neoforge"))
+	}
+}
