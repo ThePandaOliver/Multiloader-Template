@@ -1,5 +1,5 @@
 plugins {
-	id("dev.architectury.loom-no-remap")
+	id("dev.architectury.loom")
 }
 
 val mcVersion = stonecutter.current.version
@@ -57,14 +57,21 @@ repositories {
 val loaderVersion: String by project
 
 dependencies {
+	val parchmentMinecraftVersion: String by project
+	val parchmentMappingsVersion: String by project
+
 	minecraft("com.mojang:minecraft:$mcVersion")
+	mappings(loom.layered {
+		officialMojangMappings()
+		parchment("org.parchmentmc.data:parchment-$parchmentMinecraftVersion:$parchmentMappingsVersion@zip")
+	})
 
 	when (loaderPlatform) {
 		"fabric" -> {
 			val fabricApiVersion: String by project
 
-			implementation("net.fabricmc:fabric-loader:${loaderVersion}")
-			implementation("net.fabricmc.fabric-api:fabric-api:${fabricApiVersion}")
+			modImplementation("net.fabricmc:fabric-loader:${loaderVersion}")
+			modImplementation("net.fabricmc.fabric-api:fabric-api:${fabricApiVersion}")
 		}
 
 		"neoforge" -> {
@@ -109,13 +116,13 @@ tasks {
 		}
 	}
 
-//	jar {
-//		injectAccessWidener.set(true)
-//		if (loaderPlatform == "neoforge")
-//			atAccessWideners.add(loom.accessWidenerPath.get().asFile.name)
-//	}
+	remapJar {
+		injectAccessWidener.set(true)
+		if (loaderPlatform == "neoforge")
+			atAccessWideners.add(loom.accessWidenerPath.get().asFile.name)
+	}
 }
 
-//tasks.withType(JavaCompile).configureEach {
-//	options.release = javaVersion
-//}
+tasks.withType(JavaCompile).configureEach {
+	options.release = javaVersion
+}

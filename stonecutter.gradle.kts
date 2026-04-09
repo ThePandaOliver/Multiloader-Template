@@ -1,14 +1,9 @@
-import org.jetbrains.gradle.ext.packagePrefix
-import org.jetbrains.gradle.ext.settings
-
 plugins {
 	id("dev.kikugie.stonecutter")
-	kotlin("jvm") version "2.2.0" apply false
-	id("architectury-plugin") version "3.4-SNAPSHOT" apply false
-	id("dev.architectury.loom") version "1.11-SNAPSHOT" apply false
-	id("org.jetbrains.gradle.plugin.idea-ext") version "1.1.10"
+	id("dev.architectury.loom") version "1.13-SNAPSHOT" apply false
+	id("dev.architectury.loom-no-remap") version "1.14-SNAPSHOT" apply false
 }
-stonecutter active "1.21.10-fabric"
+stonecutter active "26.1.2-fabric"
 
 stonecutter parameters {
 	constants {
@@ -18,13 +13,3 @@ stonecutter parameters {
 
 val modGroup: String by project
 val modId: String by project
-
-idea {
-	module {
-		settings {
-			val packagePrefixStr = "$modGroup.$modId"
-			packagePrefix["src/main/kotlin"] = packagePrefixStr
-			packagePrefix["src/main/java"] = packagePrefixStr
-		}
-	}
-}

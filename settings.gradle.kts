@@ -11,19 +11,24 @@ pluginManagement {
 }
 
 plugins {
-	id("dev.kikugie.stonecutter") version "0.7.10"
+	id("dev.kikugie.stonecutter") version "0.9"
 }
 
 rootProject.name = "Template"
 
 stonecutter {
 	create(rootProject) {
-		fun mc(mcVersion: String, name: String = mcVersion, loaders: Iterable<String>) {
+		fun mc(mcVersion: String, name: String = mcVersion, loaders: Iterable<String>, buildscriptName: String? = null) {
 			for (loader in loaders) {
-				version("$name-$loader", mcVersion)
+				version("$name-$loader", mcVersion).apply {
+					if (buildscriptName != null) {
+						buildscript(buildscriptName)
+					}
+				}
 			}
 		}
 
-		mc("1.21.10", loaders = listOf("fabric", "neoforge"))
+		mc("1.21.11", loaders = listOf("fabric", "neoforge"), buildscriptName = "obfuscated")
+		mc("26.1.2", loaders = listOf("fabric", "neoforge"))
 	}
 }
